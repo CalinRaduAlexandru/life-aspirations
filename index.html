@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Double Circle Sliders</title>
+<title>LifeAspirations</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="apple-touch-icon" href="favicon.jpg">
 <style>
@@ -304,7 +304,7 @@
 </head>
 <body>
 
-<main class="app sliders" id="app" aria-label="Double Circle Sliders"></main>
+<main class="app sliders" id="app" aria-label="LifeAspirations"></main>
 
 <script>
   const app = document.getElementById("app");
@@ -392,15 +392,6 @@
     makeDraggable(empty, slider, range, config.accent);
     makeDraggable(full, slider, range, config.accent);
 
-    empty.addEventListener("dblclick", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      empty.classList.toggle("blocked");
-      empty.setAttribute("aria-disabled", String(empty.classList.contains("blocked")));
-      lock.style.top = empty.style.top;
-      saveSliderState(slider);
-    });
-
     slider.addEventListener("pointerup", () => {
       saveSliderState(slider);
     });
@@ -417,8 +408,24 @@
   });
 
   function makeDraggable(handle, slider, range, accent) {
+    const isEmptyHandle = handle.classList.contains("empty");
+    const tapState = {
+      lastTapAt: 0,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      moved: false
+    };
+
     handle.addEventListener("pointerdown", (event) => {
       if (handle.classList.contains("blocked")) return;
+
+      if (isEmptyHandle) {
+        tapState.pointerId = event.pointerId;
+        tapState.startX = event.clientX;
+        tapState.startY = event.clientY;
+        tapState.moved = false;
+      }
 
       handle.setPointerCapture(event.pointerId);
 
@@ -427,6 +434,10 @@
         const offset = handle.offsetHeight / 2;
         const y = Math.max(offset, Math.min(rect.height - offset, moveEvent.clientY - rect.top));
         handle.style.top = `${(y / rect.height) * 100}%`;
+        if (isEmptyHandle && moveEvent.pointerId === tapState.pointerId) {
+          const distance = Math.hypot(moveEvent.clientX - tapState.startX, moveEvent.clientY - tapState.startY);
+          if (distance > 8) tapState.moved = true;
+        }
         syncRange(range, slider.querySelector(".handle.full"), accent);
         const lock = slider.querySelector(".lock");
         lock.style.top = slider.querySelector(".handle.empty").style.top;
@@ -437,6 +448,20 @@
         handle.removeEventListener("pointerup", stop);
         handle.removeEventListener("pointercancel", stop);
         syncRange(range, slider.querySelector(".handle.full"), accent);
+        if (isEmptyHandle && event.pointerId === tapState.pointerId && !tapState.moved) {
+          const now = performance.now();
+          const isDoubleTap = now - tapState.lastTapAt < 320;
+          tapState.lastTapAt = now;
+
+          if (isDoubleTap) {
+            const empty = slider.querySelector(".handle.empty");
+            const lock = slider.querySelector(".lock");
+            empty.classList.toggle("blocked");
+            empty.setAttribute("aria-disabled", String(empty.classList.contains("blocked")));
+            lock.style.top = empty.style.top;
+            saveSliderState(slider);
+          }
+        }
         saveSliderState(slider);
       };
 
