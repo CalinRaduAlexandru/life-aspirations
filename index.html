@@ -529,22 +529,24 @@
       pointerId: null,
       startX: 0,
       startY: 0,
-      moved: false
+      moved: false,
+      dragLocked: false
     };
 
     handle.addEventListener("pointerdown", (event) => {
-      if (handle.classList.contains("blocked")) return;
-
       if (isEmptyHandle) {
         tapState.pointerId = event.pointerId;
         tapState.startX = event.clientX;
         tapState.startY = event.clientY;
         tapState.moved = false;
+        tapState.dragLocked = handle.classList.contains("blocked");
       }
 
       handle.setPointerCapture(event.pointerId);
 
       const move = (moveEvent) => {
+        if (isEmptyHandle && tapState.dragLocked) return;
+
         const rect = slider.getBoundingClientRect();
         const railRect = slider.querySelector(".rail").getBoundingClientRect();
         const offset = handle.offsetHeight / 2;
@@ -565,7 +567,9 @@
         handle.removeEventListener("pointermove", move);
         handle.removeEventListener("pointerup", stop);
         handle.removeEventListener("pointercancel", stop);
-        clampHandleToRail(handle, slider);
+        if (!(isEmptyHandle && tapState.dragLocked)) {
+          clampHandleToRail(handle, slider);
+        }
         syncRange(range, slider.querySelector(".handle.full"), accent, slider);
         if (isEmptyHandle && event.pointerId === tapState.pointerId && !tapState.moved) {
           const now = performance.now();
