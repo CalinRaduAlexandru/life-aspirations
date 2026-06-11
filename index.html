@@ -249,6 +249,44 @@
     background: currentColor;
   }
 
+  .date-toast {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    transition: opacity 320ms ease-in-out, transform 320ms ease-in-out;
+    z-index: 2;
+  }
+
+  .date-toast.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .date-toast__label {
+    padding: 14px 20px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(31, 31, 31, 0.08);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    color: #2b2b2b;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 540px) {
+    .date-toast__label {
+      padding: 12px 16px;
+      font-size: 15px;
+    }
+  }
+
   @media (max-width: 880px) {
     .app {
       width: calc(100vw - 20px);
@@ -323,6 +361,9 @@
 <body>
 
 <main class="app sliders" id="app" aria-label="LifeAspirations"></main>
+<div class="date-toast" id="dateToast" aria-hidden="true">
+  <div class="date-toast__label" id="dateToastLabel"></div>
+</div>
 
 <script>
   function updateViewportUnit() {
@@ -336,6 +377,47 @@
   window.visualViewport?.addEventListener("scroll", updateViewportUnit);
 
   const app = document.getElementById("app");
+  const dateToast = document.getElementById("dateToast");
+  const dateToastLabel = document.getElementById("dateToastLabel");
+  const roDateLabel = new Intl.DateTimeFormat("ro-RO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date());
+  dateToastLabel.textContent = roDateLabel;
+
+  const backgroundTapState = {
+    lastTapAt: 0,
+    timeoutId: null
+  };
+
+  function showDateToast() {
+    dateToast.classList.add("visible");
+    window.clearTimeout(backgroundTapState.timeoutId);
+    backgroundTapState.timeoutId = window.setTimeout(() => {
+      dateToast.classList.remove("visible");
+    }, 2400);
+  }
+
+  function isBackgroundTarget(target) {
+    return !target.closest(".app") && !target.closest(".date-toast");
+  }
+
+  document.body.addEventListener("pointerup", (event) => {
+    if (event.pointerType !== "touch") return;
+    if (!isBackgroundTarget(event.target)) return;
+
+    const now = performance.now();
+    const isDoubleTap = now - backgroundTapState.lastTapAt < 320;
+    backgroundTapState.lastTapAt = now;
+
+    if (isDoubleTap) showDateToast();
+  });
+
+  document.body.addEventListener("dblclick", (event) => {
+    if (!isBackgroundTarget(event.target)) return;
+    showDateToast();
+  });
 
   const sliders = [
     {
