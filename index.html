@@ -19,7 +19,7 @@
 
   body {
     margin: 0;
-    min-height: 100vh;
+    min-height: calc(var(--vh, 1vh) * 100);
     display: flex;
     justify-content: center;
     align-items: flex-end;
@@ -325,6 +325,16 @@
 <main class="app sliders" id="app" aria-label="LifeAspirations"></main>
 
 <script>
+  function updateViewportUnit() {
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    document.documentElement.style.setProperty("--vh", `${viewportHeight * 0.01}px`);
+  }
+
+  updateViewportUnit();
+  window.addEventListener("resize", updateViewportUnit);
+  window.visualViewport?.addEventListener("resize", updateViewportUnit);
+  window.visualViewport?.addEventListener("scroll", updateViewportUnit);
+
   const app = document.getElementById("app");
 
   const sliders = [
