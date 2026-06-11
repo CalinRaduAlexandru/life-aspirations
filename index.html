@@ -393,12 +393,8 @@
 
     empty.style.top = `${initial.empty}%`;
     full.style.top = `${initial.full}%`;
-    clampHandleToRail(empty, slider);
-    clampHandleToRail(full, slider);
     empty.classList.toggle("blocked", Boolean(initial.blocked));
     empty.setAttribute("aria-disabled", String(Boolean(initial.blocked)));
-    syncRange(range, full, config.accent, slider);
-    lock.style.top = empty.style.top;
 
     makeDraggable(empty, slider, range, config.accent);
     makeDraggable(full, slider, range, config.accent);
@@ -416,6 +412,13 @@
     });
 
     app.appendChild(slider);
+
+    requestAnimationFrame(() => {
+      clampHandleToRail(empty, slider);
+      clampHandleToRail(full, slider);
+      syncRange(range, full, config.accent, slider);
+      lock.style.top = empty.style.top;
+    });
   });
 
   function makeDraggable(handle, slider, range, accent) {
@@ -489,6 +492,7 @@
   function clampHandleToRail(handle, slider) {
     const sliderRect = slider.getBoundingClientRect();
     const railRect = slider.querySelector(".rail").getBoundingClientRect();
+    if (!sliderRect.height || !railRect.height) return;
     const offset = handle.offsetHeight / 2;
     const currentY = (parseFloat(handle.style.top) / 100) * sliderRect.height;
     const topLimit = railRect.top - sliderRect.top + offset;
@@ -500,6 +504,7 @@
   function syncRange(range, fullHandle, accent, slider) {
     const sliderRect = slider.getBoundingClientRect();
     const railRect = slider.querySelector(".rail").getBoundingClientRect();
+    if (!sliderRect.height || !railRect.height) return;
     const fullCenterY = ((parseFloat(fullHandle.style.top) / 100) * sliderRect.height) - (railRect.top - sliderRect.top);
     const fullY = Math.max(0, Math.min(100, (fullCenterY / railRect.height) * 100));
     const softAccent = `color-mix(in srgb, ${accent} 20%, white)`;
